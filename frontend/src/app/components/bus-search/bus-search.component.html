@@ -1,0 +1,169 @@
+<div class="search-container">
+  <!-- Hero Section with Background -->
+  <div class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="container">
+        <!-- Mobile Logo and Call Button (Top of Hero) -->
+        <div class="mobile-top-bar">
+          <div class="logo-section">
+            <img src="assets/images/logo.png" alt="RapidTicket" class="mobile-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="logo-fallback">
+              <span class="logo-text">Rapid<span class="logo-highlight">Ticket</span></span>
+            </div>
+          </div>
+          <button class="mobile-contact-btn">
+            <i class="fas fa-phone-alt"></i>
+          </button>
+        </div>
+        
+        <!-- Service Cards (Floating on background) -->
+        <div class="service-cards-wrapper">
+          <button class="service-card active">
+            <i class="fas fa-bus"></i>
+            <span>BUS</span>
+          </button>
+          <button class="service-card">
+            <i class="fas fa-ship"></i>
+            <span>SHIP</span>
+          </button>
+          <button class="service-card">
+            <i class="fas fa-hotel"></i>
+            <span>HOTEL</span>
+          </button>
+          <button class="service-card">
+            <i class="fas fa-gift"></i>
+            <span>DEALS</span>
+          </button>
+        </div>
+        
+        <!-- Search Card -->
+        <div class="search-card-wrapper">
+          <div class="search-card">
+            <form [formGroup]="searchForm" (ngSubmit)="onSearch()" novalidate>
+              <!-- Row 1: Going From & Going To -->
+              <div class="search-row">
+                <!-- From Location -->
+                <div class="search-field search-field-left">
+                  <label class="field-label">GOING FROM</label>
+                  <input
+                    type="text"
+                    class="form-control field-input"
+                    formControlName="from"
+                    placeholder="Please select"
+                    [class.is-invalid]="searchForm.get('from')?.invalid && searchForm.get('from')?.touched"
+                  />
+                  <div class="invalid-feedback" *ngIf="searchForm.get('from')?.invalid && searchForm.get('from')?.touched">
+                    From location is required
+                  </div>
+                </div>
+
+                <!-- Swap Button -->
+                <div class="swap-button-wrapper">
+                  <button type="button" class="swap-button" (click)="swapLocations()">
+                    <i class="fas fa-exchange-alt"></i>
+                  </button>
+                </div>
+
+                <!-- To Location -->
+                <div class="search-field search-field-right">
+                  <label class="field-label">GOING TO</label>
+                  <input
+                    type="text"
+                    class="form-control field-input"
+                    formControlName="to"
+                    placeholder="Please select"
+                    [class.is-invalid]="searchForm.get('to')?.invalid && searchForm.get('to')?.touched"
+                  />
+                  <div class="invalid-feedback" *ngIf="searchForm.get('to')?.invalid && searchForm.get('to')?.touched">
+                    To location is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2: Journey Date & Return Date -->
+              <div class="search-row">
+                <!-- Journey Date -->
+                <div class="search-field search-field-left">
+                  <label class="field-label">JOURNEY DATE <i class="fas fa-chevron-down"></i></label>
+                  <input
+                    type="date"
+                    class="form-control field-input"
+                    formControlName="travelDate"
+                    [min]="minDate"
+                    placeholder="Select date"
+                    [class.is-invalid]="searchForm.get('travelDate')?.invalid && searchForm.get('travelDate')?.touched"
+                  />
+                  <div class="invalid-feedback" *ngIf="searchForm.get('travelDate')?.invalid && searchForm.get('travelDate')?.touched">
+                    Valid travel date is required
+                  </div>
+                </div>
+
+                <!-- Return Date (Optional) -->
+                <div class="search-field search-field-right">
+                  <label class="field-label">RETURN DATE <i class="fas fa-chevron-down"></i></label>
+                  <input
+                    type="date"
+                    class="form-control field-input"
+                    formControlName="returnDate"
+                    [min]="minDate"
+                    placeholder="Select date"
+                  />
+                </div>
+              </div>
+
+              <!-- Trending Searches -->
+              <div class="trending-section">
+                <span class="trending-label">Trending Searches:</span>
+                <div class="trending-routes">
+                  <button 
+                    type="button" 
+                    class="trending-route" 
+                    *ngFor="let route of trendingRoutes"
+                    (click)="loadTrendingRoute(route)">
+                    {{ route.from }} <i class="fas fa-arrow-right"></i> {{ route.to }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Search Button -->
+              <div class="search-button-wrapper">
+                <button
+                  type="submit"
+                  class="btn-search-bus"
+                  [disabled]="isLoading"
+                >
+                  <span *ngIf="!isLoading">Search Bus</span>
+                  <span *ngIf="isLoading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Searching...
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom Navigation (Mobile Only) -->
+  <div class="bottom-nav">
+    <button class="bottom-nav-btn active">
+      <i class="fas fa-search"></i>
+      <span>EXPLORE</span>
+    </button>
+    <button class="bottom-nav-btn">
+      <i class="fas fa-ticket-alt"></i>
+      <span>MY BOOKINGS</span>
+    </button>
+    <button class="bottom-nav-btn">
+      <i class="fas fa-bolt"></i>
+      <span>DEALS</span>
+    </button>
+    <button class="bottom-nav-btn">
+      <i class="fas fa-bars"></i>
+      <span>MORE</span>
+    </button>
+  </div>
+</div>
