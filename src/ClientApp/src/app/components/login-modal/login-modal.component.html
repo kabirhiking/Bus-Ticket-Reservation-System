@@ -1,0 +1,180 @@
+<div class="login-modal-overlay" *ngIf="isVisible" (click)="closeModal()">
+  <div class="login-modal-content" (click)="$event.stopPropagation()">
+    <!-- Close Button -->
+    <button class="modal-close-btn" (click)="closeModal()">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Tab Navigation (Only show when not in OTP mode) -->
+      <div class="tab-navigation" *ngIf="!showOtpInput">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'login'"
+          (click)="switchTab('login')">
+          LOGIN
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeTab === 'signup'"
+          (click)="switchTab('signup')">
+          SIGN UP
+        </button>
+      </div>
+
+      <!-- OTP Verification Form -->
+      <div class="form-content otp-form" *ngIf="showOtpInput">
+        <div class="otp-header">
+          <button type="button" class="back-btn" (click)="backToForm()">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <h3>Verify Email</h3>
+        </div>
+        
+        <p class="otp-instruction">
+          We've sent a 6-digit verification code to <strong>{{ currentEmail }}</strong>
+        </p>
+
+        <form [formGroup]="otpForm" (ngSubmit)="onVerifyOtp()">
+          <div class="form-group">
+            <input 
+              type="text" 
+              class="form-control otp-input"
+              formControlName="otpCode"
+              placeholder="Enter 6-digit code"
+              maxlength="6"
+              [class.is-invalid]="otpForm.get('otpCode')?.invalid && otpForm.get('otpCode')?.touched">
+            <div class="invalid-feedback" *ngIf="otpForm.get('otpCode')?.invalid && otpForm.get('otpCode')?.touched">
+              <span *ngIf="otpForm.get('otpCode')?.errors?.['required']">OTP code is required</span>
+              <span *ngIf="otpForm.get('otpCode')?.errors?.['pattern']">Please enter a valid 6-digit code</span>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="btn-submit"
+            [disabled]="otpForm.invalid || isLoading">
+            <span *ngIf="!isLoading">VERIFY & {{ otpPurpose === 'LOGIN' ? 'LOGIN' : 'SIGN UP' }}</span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Verifying...
+            </span>
+          </button>
+        </form>
+
+        <!-- Resend OTP -->
+        <div class="resend-section">
+          <p *ngIf="!canResendOtp" class="timer-text">
+            Resend code in {{ getTimerDisplay() }}
+          </p>
+          <button 
+            type="button" 
+            class="resend-btn"
+            *ngIf="canResendOtp"
+            [disabled]="isLoading"
+            (click)="onResendOtp()">
+            <span *ngIf="!isLoading">Resend Code</span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Sending...
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <div class="form-content" *ngIf="activeTab === 'login' && !showOtpInput">
+        <h3>Login to your account</h3>
+        <p class="form-subtitle">Enter your email to receive a verification code</p>
+        
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+          <div class="form-group">
+            <input 
+              type="email" 
+              class="form-control"
+              formControlName="email"
+              placeholder="Email Address"
+              [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+            <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+              <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
+              <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="btn-submit"
+            [disabled]="loginForm.invalid || isLoading">
+            <span *ngIf="!isLoading">SEND VERIFICATION CODE</span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Sending...
+            </span>
+          </button>
+        </form>
+
+        <!-- Sign Up Link -->
+        <div class="bottom-link">
+          <span>Don't have an account?</span>
+          <button type="button" class="link-btn" (click)="switchTab('signup')">Sign Up</button>
+        </div>
+      </div>
+
+      <!-- Sign Up Form -->
+      <div class="form-content" *ngIf="activeTab === 'signup' && !showOtpInput">
+        <h3>Create your account</h3>
+        <p class="form-subtitle">Enter your details to get started</p>
+        
+        <form [formGroup]="signupForm" (ngSubmit)="onSignup()">
+          <div class="form-group">
+            <input 
+              type="text" 
+              class="form-control"
+              formControlName="fullName"
+              placeholder="Full Name"
+              [class.is-invalid]="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
+            <div class="invalid-feedback" *ngIf="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
+              <span *ngIf="signupForm.get('fullName')?.errors?.['required']">Full name is required</span>
+              <span *ngIf="signupForm.get('fullName')?.errors?.['minlength']">Name must be at least 2 characters</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <input 
+              type="email" 
+              class="form-control"
+              formControlName="email"
+              placeholder="Email Address"
+              [class.is-invalid]="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+            <div class="invalid-feedback" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+              <span *ngIf="signupForm.get('email')?.errors?.['required']">Email is required</span>
+              <span *ngIf="signupForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="btn-submit"
+            [disabled]="signupForm.invalid || isLoading">
+            <span *ngIf="!isLoading">CREATE ACCOUNT</span>
+            <span *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Creating...
+            </span>
+          </button>
+        </form>
+
+        <!-- Login Link -->
+        <div class="bottom-link">
+          <span>Already have an account?</span>
+          <button type="button" class="link-btn" (click)="switchTab('login')">Login</button>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div class="terms-section" *ngIf="!showOtpInput">
+        <p>By continuing you agree to our 
+          <a href="#" class="terms-link">Terms & Conditions</a> and 
+          <a href="#" class="terms-link">Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

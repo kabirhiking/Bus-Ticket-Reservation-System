@@ -1,0 +1,464 @@
+<div class="results-page">
+  <div class="modify-modal" *ngIf="showModifyModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="close-btn" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      
+      <div class="modal-hero">
+        <h3 class="modal-title">ONWARD</h3>
+        <h2 class="modal-subtitle">{{ searchCriteria.from }} To {{ searchCriteria.to }} On {{ searchCriteria.travelDate | date:'dd MMM yyyy' }}</h2>
+      </div>
+      
+      <div class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i></label>
+            <input type="text" [(ngModel)]="modifyForm.from" placeholder="Dhaka" class="form-control">
+          </div>
+          
+          <button class="swap-btn" (click)="swapLocations()">
+            <i class="fas fa-exchange-alt"></i>
+          </button>
+          
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i></label>
+            <input type="text" [(ngModel)]="modifyForm.to" placeholder="Birampur" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-calendar-alt"></i></label>
+            <input type="date" [(ngModel)]="modifyForm.travelDate" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-calendar-alt"></i></label>
+            <input type="date" [(ngModel)]="modifyForm.returnDate" placeholder="RETURN DATE" class="form-control">
+          </div>
+          
+          <button class="btn-search" (click)="performModifiedSearch()">
+            SEARCH
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Header Section -->
+  <div class="results-hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-top-row">
+          <div class="hero-left">
+            <span class="label">ONWARD</span>
+            <h2 class="route-text">{{ searchCriteria.from }} To {{ searchCriteria.to }} On {{ searchCriteria.travelDate | date:'dd MMM yyyy' }}</h2>
+          </div>
+          
+          <div class="hero-right">
+            <button class="btn-modify" (click)="newSearch()">
+              MODIFY SEARCH
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-label">Total Buses Found:</span>
+            <span class="stat-value">{{ searchResults.length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Operators Found:</span>
+            <span class="stat-value">{{ getUniqueOperators() }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Seats Available:</span>
+            <span class="stat-value">{{ getTotalSeats() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container results-container">
+
+    <!-- Sort and Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-left">
+        <div class="sort-section">
+          <i class="fas fa-bars"></i>
+          <span class="sort-label">SORT BY</span>
+        </div>
+      </div>
+      
+      <div class="filter-center">
+        <div class="filter-options">
+          <button class="filter-btn" [class.active]="sortBy === 'departure'" (click)="setSortBy('departure')">
+            DEPARTURE TIME <i class="fas fa-sort"></i>
+          </button>
+          <button class="filter-btn" [class.active]="sortBy === 'seats'" (click)="setSortBy('seats')">
+            AVAILABLE SEATS <i class="fas fa-sort"></i>
+          </button>
+          <button class="filter-btn" [class.active]="sortBy === 'fare'" (click)="setSortBy('fare')">
+            FARE <i class="fas fa-sort"></i>
+          </button>
+          <button class="filter-btn" [class.active]="sortBy === 'offers'" (click)="setSortBy('offers')">
+            SPECIAL OFFERS <i class="fas fa-sort"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="filter-right">
+        <button class="btn-filter" (click)="toggleFilterPanel()">
+          FILTER BY
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Panel (Collapsible) -->
+    <div class="filter-panel" *ngIf="showFilterPanel">
+      <div class="filter-panel-content">
+        <h3 class="filter-title">Filter</h3>
+        
+        <!-- Top Row: Bus Type and Departure Time -->
+        <div class="filter-row-top">
+          <!-- Left: Bus Type and Bus Class -->
+          <div class="filter-section-left">
+            <h4 class="filter-section-title">Bus Type</h4>
+            <div class="filter-options-horizontal">
+              <label class="filter-checkbox">
+                <input type="checkbox" [(ngModel)]="filters.busType.ac">
+                <span>AC</span>
+              </label>
+              <label class="filter-checkbox">
+                <input type="checkbox" [(ngModel)]="filters.busType.nonAc">
+                <span>NON AC</span>
+              </label>
+            </div>
+            
+            <h4 class="filter-section-title">Bus Class</h4>
+            <div class="filter-options-horizontal">
+              <label class="filter-checkbox">
+                <input type="checkbox" [(ngModel)]="filters.busClass.business">
+                <span>Business</span>
+              </label>
+              <label class="filter-checkbox">
+                <input type="checkbox" [(ngModel)]="filters.busClass.economy">
+                <span>Economy</span>
+              </label>
+              <label class="filter-checkbox">
+                <input type="checkbox" [(ngModel)]="filters.busClass.sleeper">
+                <span>Sleeper</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Right: Departure Time -->
+          <div class="filter-section-right">
+            <h4 class="filter-section-title">Departure Time</h4>
+            <div class="time-filters-grid">
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.before4am"
+                      (click)="filters.departureTime.before4am = !filters.departureTime.before4am">
+                <span class="time-range">Before 4AM</span>
+                <span class="time-label">Late Night</span>
+              </button>
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.morning4to8"
+                      (click)="filters.departureTime.morning4to8 = !filters.departureTime.morning4to8">
+                <span class="time-range">4AM to 8AM</span>
+                <span class="time-label">Early Morning</span>
+              </button>
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.morning8to12"
+                      (click)="filters.departureTime.morning8to12 = !filters.departureTime.morning8to12">
+                <span class="time-range">8AM to 12PM</span>
+                <span class="time-label">Morning</span>
+              </button>
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.afternoon12to4"
+                      (click)="filters.departureTime.afternoon12to4 = !filters.departureTime.afternoon12to4">
+                <span class="time-range">12PM to 4PM</span>
+                <span class="time-label">Evening</span>
+              </button>
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.evening4to8"
+                      (click)="filters.departureTime.evening4to8 = !filters.departureTime.evening4to8">
+                <span class="time-range">4PM to 8PM</span>
+                <span class="time-label">Night</span>
+              </button>
+              <button class="time-filter-btn" 
+                      [class.active]="filters.departureTime.after8pm"
+                      (click)="filters.departureTime.after8pm = !filters.departureTime.after8pm">
+                <span class="time-range">After 8PM</span>
+                <span class="time-label">Overnight</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operators Filter -->
+        <div class="filter-section">
+          <h4 class="filter-section-title">Operators</h4>
+          <div class="operators-search">
+            <input type="text" placeholder="Search operators" class="search-input">
+          </div>
+          <div class="operators-list">
+            <label class="filter-checkbox" *ngFor="let operator of availableOperators">
+              <input type="checkbox" 
+                     [checked]="isOperatorSelected(operator)"
+                     (change)="toggleOperator(operator)">
+              <span>{{ operator }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="filter-actions">
+          <button class="btn-clear" (click)="clearFilters()">Clear</button>
+          <button class="btn-done" (click)="applyFilters()">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3 text-muted">Searching for available buses...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !isLoading" class="alert alert-danger" role="alert">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{ errorMessage }}
+      <button class="btn btn-sm btn-outline-danger ms-3" (click)="searchBuses()">
+        <i class="fas fa-redo me-1"></i>Retry
+      </button>
+    </div>
+
+    <!-- No Results -->
+    <div *ngIf="!isLoading && !errorMessage && searchResults.length === 0" class="text-center py-5">
+      <i class="fas fa-bus text-muted" style="font-size: 4rem;"></i>
+      <h5 class="mt-3 text-muted">No buses found</h5>
+      <p class="text-muted">Try adjusting your search criteria</p>
+      <button class="btn btn-danger" (click)="newSearch()">
+        <i class="fas fa-search me-2"></i>Search Again
+      </button>
+    </div>
+
+    <!-- Search Results -->
+    <div *ngIf="!isLoading && searchResults.length > 0" class="results-list">
+      <ng-container *ngFor="let bus of sortedResults()">
+        <div class="bus-card">
+          <!-- Special Offer Badge -->
+          <div class="deals-badge" *ngIf="bus.hasOffer">
+            <i class="fas fa-bolt"></i> deals
+          </div>
+
+        <div class="bus-card-content">
+          <!-- Bus Operator Info -->
+          <div class="operator-section">
+            <h3 class="operator-name">{{ bus.operatorName || bus.busNumber }}</h3>
+            <div class="bus-type">{{ bus.busType }}</div>
+            <div class="amenities">
+              <span class="amenity" *ngIf="bus.hasAC">
+                <i class="fas fa-snowflake"></i> {{ bus.hasAC ? 'AC' : 'NON AC' }}
+              </span>
+              <span class="charge-badge-mobile">
+                NO EXTRA CHARGE
+              </span>
+            </div>
+            <a href="#" class="cancellation-link">Cancellation policy</a>
+          </div>
+
+          <!-- Journey Details -->
+          <div class="journey-section">
+            <div class="time-info">
+              <div class="time-block">
+                <span class="label">Starting</span>
+                <div class="time">{{ bus.departureTime }}</div>
+                <div class="location">{{ bus.routeFrom }}</div>
+              </div>
+              
+              <div class="bus-icon">
+                <i class="fas fa-bus"></i>
+              </div>
+              
+              <div class="time-block">
+                <span class="label">Arrival</span>
+                <div class="time">{{ bus.arrivalTime }}</div>
+                <div class="location">{{ bus.routeTo }}</div>
+              </div>
+            </div>
+
+            <div class="seats-info">
+              <div class="seats-label">Seats Left:</div>
+              <div class="seats-count" [class.low-seats]="bus.availableSeats < 10">{{ bus.availableSeats }}</div>
+            </div>
+          </div>
+
+          <!-- Pricing and Action -->
+          <div class="price-section">
+            <!-- NO EXTRA CHARGE Badge - visible on desktop -->
+            <div class="charge-badge">
+              NO EXTRA CHARGE
+            </div>
+
+            <!-- Seats Info - visible only on mobile -->
+            <div class="seats-info">
+              <div class="seats-label">Seats Left:</div>
+              <div class="seats-count" [class.low-seats]="bus.availableSeats < 10">{{ bus.availableSeats }}</div>
+            </div>
+
+            <div class="price-block">
+              <div class="savings" *ngIf="bus.savings">
+                <i class="fas fa-tag"></i> Save {{ bus.savings }} TK
+              </div>
+              <div class="original-price" *ngIf="bus.originalPrice">৳{{ bus.originalPrice }}</div>
+              <div class="current-price">৳{{ bus.price }}</div>
+            </div>
+
+            <div class="cancellation-link">
+              <a href="#" (click)="$event.preventDefault()">
+                <i class="fas fa-info-circle"></i> Cancellation Policy
+              </a>
+            </div>
+            
+            <button class="btn-view-seats" (click)="selectBus(bus)" [disabled]="bus.availableSeats === 0">
+              {{ selectedBusForSeats?.id === bus.id ? 'HIDE SEATS' : 'VIEW SEATS' }}
+            </button>
+          </div>
+        </div>
+      </div>
+        
+      <!-- Seat Selection Section (Expands below card) -->
+      <div class="seat-selection-section" *ngIf="selectedBusForSeats?.id === bus.id">
+        <div class="seat-layout">
+          <!-- Left Side: Seat Map -->
+          <div class="seat-map-section">
+            <div class="seat-legend">
+                <div class="legend-item">
+                  <div class="legend-icon available"></div>
+                  <span>Available</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-icon booked"></div>
+                  <span>Booked</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-icon sold"></div>
+                  <span>Sold</span>
+                </div>
+              </div>
+
+              <!-- Seat Grid -->
+              <div class="seat-grid">
+                <div class="driver-area">
+                  <svg viewBox="0 0 100 100" fill="currentColor" width="28" height="28">
+                    <!-- Outer circle -->
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="8"/>
+                    <!-- Inner circle -->
+                    <circle cx="50" cy="50" r="12" fill="none" stroke="currentColor" stroke-width="6"/>
+                    <!-- Top spoke -->
+                    <path d="M 50 20 L 50 38 M 48 22 L 50 20 L 52 22" stroke="currentColor" stroke-width="5" fill="none"/>
+                    <!-- Bottom left spoke -->
+                    <path d="M 25 70 L 40 55" stroke="currentColor" stroke-width="5"/>
+                    <!-- Bottom right spoke -->
+                    <path d="M 75 70 L 60 55" stroke="currentColor" stroke-width="5"/>
+                  </svg>
+                </div>
+                
+                <div class="seats-container">
+                  <div class="seat-row" *ngFor="let row of seatLayout; let rowIndex = index">
+                    <div 
+                      *ngFor="let seat of row; let colIndex = index" 
+                      class="seat"
+                      [class.available]="seat.status === 'available'"
+                      [class.booked]="seat.status === 'booked'"
+                      [class.sold]="seat.status === 'sold'"
+                      [class.selected]="seat.status === 'selected'"
+                      [class.empty]="seat.status === 'empty'"
+                      [class.aisle]="colIndex === 2 || colIndex === 3"
+                      (click)="toggleSeat(seat)"
+                    >
+                      <i class="fas fa-couch" *ngIf="seat.number"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle Section: Boarding/Dropping & Seat Information -->
+            <div class="middle-form-section">
+              <h2 class="form-title">BOARDING/DROPPING:</h2>
+              
+              <div class="form-group">
+                <label>BOARDING POINT*</label>
+                <select [(ngModel)]="bookingForm.boardingPoint" class="form-control">
+                  <option value="">Select boarding point</option>
+                  <option *ngFor="let point of boardingPoints" [value]="point.name">
+                    [{{point.time}}] {{point.name}}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>DROPPING POINT*</label>
+                <select [(ngModel)]="bookingForm.droppingPoint" class="form-control">
+                  <option value="">Select dropping point</option>
+                  <option *ngFor="let point of droppingPoints" [value]="point.name">
+                    [{{point.time}}] {{point.name}}
+                  </option>
+                </select>
+              </div>
+
+              <h3 class="seat-info-title">SEAT INFORMATION:</h3>
+              <div class="fare-details">
+                <div class="fare-row">
+                  <span>Seat Fare:</span>
+                  <span class="fare-value">৳ {{calculateSeatFare()}}</span>
+                </div>
+                <div class="fare-row">
+                  <span>Service Charge:</span>
+                  <span class="fare-value green">৳ 20 (- ৳ 20)</span>
+                </div>
+                <div class="fare-row">
+                  <span>PGW Charge:</span>
+                  <span class="fare-value green">৳ 28 (- ৳ 28)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Contact & Submit -->
+            <div class="contact-form-section">
+              <div class="form-group">
+                <label>EMAIL ADDRESS*</label>
+                <input 
+                  type="email" 
+                  [(ngModel)]="bookingForm.email" 
+                  class="form-control" 
+                  placeholder="Enter email address"
+                >
+              </div>
+
+              <button class="btn-submit" (click)="submitBooking()" [disabled]="!isFormValid()">
+                SUBMIT
+              </button>
+
+              <div class="login-info">
+                <p>I have already verified my email, and have a password.</p>
+                <a href="#" class="login-link">Click here</a>
+              </div>
+
+              <div class="terms-info">
+                <p>By logging in you are agreeing to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Notice</a> of Rapidtickets.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>
