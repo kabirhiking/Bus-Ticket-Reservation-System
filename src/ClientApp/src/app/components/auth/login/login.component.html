@@ -1,0 +1,218 @@
+<div class="login-container">
+  <div class="login-content">
+    <!-- Left Side - Form -->
+    <div class="login-form-section">
+      <div class="form-wrapper">
+        <!-- Logo -->
+        <div class="login-logo">
+          <h1><span class="logo-box">Rapid</span><span class="logo-text">tickets</span></h1>
+        </div>
+
+        <!-- Title -->
+        <h2 class="login-title">Sign In to Rapidtickets</h2>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'login'"
+            (click)="switchTab('login')">
+            LOGIN
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab === 'signup'"
+            (click)="switchTab('signup')">
+            SIGN UP
+          </button>
+        </div>
+
+        <!-- Login Form -->
+        <div class="form-content" *ngIf="activeTab === 'login'">
+          <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+            <!-- Email Input -->
+            <div class="form-group">
+              <label for="loginEmail">Email Address</label>
+              <input 
+                type="email" 
+                id="loginEmail"
+                class="form-control"
+                formControlName="email"
+                placeholder="Enter your email"
+                [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+              <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
+                <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+              </div>
+            </div>
+
+            <!-- Password Toggle -->
+            <div class="password-toggle" *ngIf="!showOtpInput">
+              <span>Have a password?</span>
+              <button type="button" class="toggle-link" (click)="togglePasswordMode()">
+                Click Here
+              </button>
+            </div>
+
+            <!-- Password Input (Conditional) -->
+            <div class="form-group" *ngIf="usePassword && !showOtpInput">
+              <label for="loginPassword">Password</label>
+              <div class="password-input-wrapper">
+                <input 
+                  [type]="showPassword ? 'text' : 'password'" 
+                  id="loginPassword"
+                  class="form-control"
+                  formControlName="password"
+                  placeholder="Enter your password"
+                  [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                <button type="button" class="toggle-password-btn" (click)="togglePasswordVisibility()">
+                  <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                Password is required
+              </div>
+            </div>
+
+            <!-- OTP Input (Conditional) -->
+            <div class="form-group" *ngIf="showOtpInput">
+              <label for="otpCode">Enter OTP Code</label>
+              <input 
+                type="text" 
+                id="otpCode"
+                class="form-control"
+                formControlName="otp"
+                placeholder="Enter 6-digit code"
+                maxlength="6"
+                [class.is-invalid]="loginForm.get('otp')?.invalid && loginForm.get('otp')?.touched">
+              <div class="invalid-feedback" *ngIf="loginForm.get('otp')?.invalid && loginForm.get('otp')?.touched">
+                OTP is required
+              </div>
+              <div class="otp-info">
+                <span>Didn't receive code?</span>
+                <button type="button" class="resend-link" (click)="resendOtp()" [disabled]="resendTimer > 0">
+                  {{ resendTimer > 0 ? 'Resend in ' + resendTimer + 's' : 'Resend Code' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              type="submit" 
+              class="btn-submit"
+              *ngIf="!showOtpInput"
+              [disabled]="loginForm.invalid || isLoading">
+              <span *ngIf="!isLoading">{{ usePassword ? 'LOGIN' : 'REQUEST CODE' }}</span>
+              <span *ngIf="isLoading">
+                <i class="fas fa-spinner fa-spin"></i> Processing...
+              </span>
+            </button>
+
+            <button 
+              type="submit" 
+              class="btn-submit"
+              *ngIf="showOtpInput"
+              [disabled]="loginForm.get('otp')?.invalid || isLoading">
+              <span *ngIf="!isLoading">VERIFY & LOGIN</span>
+              <span *ngIf="isLoading">
+                <i class="fas fa-spinner fa-spin"></i> Verifying...
+              </span>
+            </button>
+          </form>
+
+          <!-- Alternative Login Option -->
+          <div class="alternative-option" *ngIf="usePassword && !showOtpInput">
+            <span>Or</span>
+            <button type="button" class="toggle-link" (click)="togglePasswordMode()">
+              Login with OTP
+            </button>
+          </div>
+
+          <!-- Sign Up Link -->
+          <div class="bottom-link">
+            <span>Need an account?</span>
+            <button type="button" class="link-btn" (click)="switchTab('signup')">Sign Up</button>
+          </div>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div class="form-content" *ngIf="activeTab === 'signup'">
+          <form [formGroup]="signupForm" (ngSubmit)="onSignup()">
+            <!-- Full Name -->
+            <div class="form-group">
+              <label for="signupName">Full Name</label>
+              <input 
+                type="text" 
+                id="signupName"
+                class="form-control"
+                formControlName="fullName"
+                placeholder="Enter your full name"
+                [class.is-invalid]="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
+              <div class="invalid-feedback" *ngIf="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">
+                Full name is required
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="signupEmail">Email Address</label>
+              <input 
+                type="email" 
+                id="signupEmail"
+                class="form-control"
+                formControlName="email"
+                placeholder="Enter your email"
+                [class.is-invalid]="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+              <div class="invalid-feedback" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+                <span *ngIf="signupForm.get('email')?.errors?.['required']">Email is required</span>
+                <span *ngIf="signupForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+              </div>
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="terms-section">
+              <p>By clicking on sign up button you are agreeing to the 
+                <a href="#" class="terms-link">Terms & Conditions</a> and 
+                <a href="#" class="terms-link">Privacy Notice</a> of Rapidtickets
+              </p>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              type="submit" 
+              class="btn-submit"
+              [disabled]="signupForm.invalid || isLoading">
+              <span *ngIf="!isLoading">SIGN UP</span>
+              <span *ngIf="isLoading">
+                <i class="fas fa-spinner fa-spin"></i> Creating Account...
+              </span>
+            </button>
+          </form>
+
+          <!-- Login Link -->
+          <div class="bottom-link">
+            <span>Have an account?</span>
+            <button type="button" class="link-btn" (click)="switchTab('login')">Login</button>
+          </div>
+        </div>
+
+        <!-- Terms (Login) -->
+        <div class="terms-section" *ngIf="activeTab === 'login'">
+          <p>By logging in you are agreeing to the 
+            <a href="#" class="terms-link">Terms & Conditions</a> and 
+            <a href="#" class="terms-link">Privacy Notice</a> of Rapidtickets
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Image -->
+    <div class="login-image-section">
+      <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80" alt="Bus Journey">
+      <div class="image-overlay">
+        <h3>Book Your Journey</h3>
+        <p>Travel comfortable with Rapidtickets</p>
+      </div>
+    </div>
+  </div>
+</div>
