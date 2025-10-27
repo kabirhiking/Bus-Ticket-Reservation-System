@@ -1,0 +1,116 @@
+<div class="seat-selection-page">
+  <div class="container">
+    <div class="seat-layout">
+      <!-- Left Side: Seat Map -->
+      <div class="seat-map-section">
+        <div class="seat-legend">
+          <div class="legend-item">
+            <div class="legend-icon available"></div>
+            <span>Available</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon booked"></div>
+            <span>Booked</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon sold"></div>
+            <span>Sold</span>
+          </div>
+        </div>
+
+        <!-- Seat Grid -->
+        <div class="seat-grid">
+          <div class="driver-area">
+            <i class="fas fa-steering-wheel"></i>
+          </div>
+          
+          <div class="seats-container">
+            <div class="seat-row" *ngFor="let row of seatLayout; let rowIndex = index">
+              <div 
+                *ngFor="let seat of row; let colIndex = index" 
+                class="seat"
+                [class.available]="seat.status === 'available'"
+                [class.booked]="seat.status === 'booked'"
+                [class.sold]="seat.status === 'sold'"
+                [class.selected]="seat.status === 'selected'"
+                [class.empty]="seat.status === 'empty'"
+                [class.aisle]="colIndex === 2 || colIndex === 3"
+                (click)="toggleSeat(seat)"
+              >
+                <i class="fas fa-couch" *ngIf="seat.number"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side: Booking Form -->
+      <div class="booking-form-section">
+        <h2 class="form-title">BOARDING/DROPPING:</h2>
+        
+        <div class="form-group">
+          <label>BOARDING POINT*</label>
+          <select [(ngModel)]="bookingForm.boardingPoint" class="form-control">
+            <option value="">Select boarding point</option>
+            <option *ngFor="let point of boardingPoints" [value]="point.name">
+              [{{point.time}}] {{point.name}}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>DROPPING POINT*</label>
+          <select [(ngModel)]="bookingForm.droppingPoint" class="form-control">
+            <option value="">Select dropping point</option>
+            <option *ngFor="let point of droppingPoints" [value]="point.name">
+              [{{point.time}}] {{point.name}}
+            </option>
+          </select>
+        </div>
+
+        <div class="fare-details">
+          <div class="fare-row">
+            <span>Seat Fare:</span>
+            <span class="fare-value">৳ {{calculateSeatFare()}}</span>
+          </div>
+          <div class="fare-row">
+            <span>Service Charge:</span>
+            <span class="fare-value green">৳ 20 (- ৳ 20)</span>
+          </div>
+          <div class="fare-row">
+            <span>PGW Charge:</span>
+            <span class="fare-value green">৳ 28 (- ৳ 28)</span>
+          </div>
+          <div class="fare-row total">
+            <span>Total Discount:</span>
+            <span class="fare-value green">৳ 48</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <!-- Email field for OTP-based authentication -->
+          <label>EMAIL ADDRESS*</label>
+          <input 
+            type="email" 
+            [(ngModel)]="bookingForm.email" 
+            class="form-control" 
+            placeholder="Enter email address"
+          >
+        </div>
+
+        <button class="btn-submit" (click)="submitBooking()" [disabled]="!isFormValid()">
+          SUBMIT
+        </button>
+
+        <div class="login-info">
+          <p>I have already verified my email, and have a password.</p>
+          <a href="#" class="login-link">Click here</a>
+        </div>
+
+        <div class="terms-info">
+          <p>By logging in you are agreeing to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Notice</a> of Rapidtickets.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
