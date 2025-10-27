@@ -1,0 +1,284 @@
+using Microsoft.AspNetCore.Mvc;
+using Supabase;
+using BusTicketReservation.Domain.Entities;
+using BusTicketReservation.WebApi.DTOs;
+using BusTicketReservation.WebApi.Models;
+
+namespace BusTicketReservation.WebApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class TestController : ControllerBase
+    {
+        private readonly Client _supabase;
+        private readonly ILogger<TestController> _logger;
+
+        public TestController(Client supabase, ILogger<TestController> logger)
+        {
+            _supabase = supabase;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Simple signup endpoint for testing
+        /// </summary>
+        [HttpPost("signup")]
+        public async Task<ActionResult> Signup([FromBody] SimpleSignupRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Processing signup for email: {Email}", request.Email);
+
+                // Generate a random OTP code
+                var otpCode = new Random().Next(100000, 999999).ToString();
+                
+                _logger.LogInformation("Generated OTP {Code} for {Email}", otpCode, request.Email);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = $"OTP sent to {request.Email}",
+                    RequiresOtp = true,
+                    OtpCode = otpCode, // In production, this would be sent via email
+                    User = new
+                    {
+                        Email = request.Email,
+                        FullName = request.FullName
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during signup for email: {Email}", request.Email);
+                return StatusCode(500, new { message = "Internal server error during signup" });
+            }
+        }
+
+        /// <summary>
+        /// Simple verify OTP endpoint for testing
+        /// </summary>
+        [HttpPost("verify-otp")]
+        public async Task<ActionResult> VerifyOtp([FromBody] SimpleVerifyOtpRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Verifying OTP for email: {Email}", request.Email);
+
+                // For testing, accept any 6-digit code
+                if (request.OtpCode?.Length == 6 && request.OtpCode.All(char.IsDigit))
+                {
+                    var userId = Guid.NewGuid();
+                    
+                    return Ok(new
+                    {
+                        Success = true,
+                        Message = "OTP verified successfully",
+                        Token = $"test-jwt-token-{userId}",
+                        User = new
+                        {
+                            Id = userId,
+                            Email = request.Email,
+                            FullName = $"User {request.Email}",
+                            IsEmailVerified = true
+                        }
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    Success = false,
+                    Message = "Invalid OTP code"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying OTP for email: {Email}", request.Email);
+                return StatusCode(500, new { message = "Internal server error during OTP verification" });
+            }
+        }
+
+        /// <summary>
+        /// Get all test records
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<List<object>>> GetAllTests()
+        {
+            try
+            {
+                _logger.LogInformation("Getting all test records");
+                
+                var result = await _supabase
+                    .From<SupabaseTest>()
+                    .Get();
+
+                var testDtos = result.Models.Select(t => new
+                {
+                    Id = t.Id,
+                    CreatedAt = t.CreatedAt
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} test records", testDtos.Count);
+                return Ok(testDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving test records");
+                return StatusCode(500, new { message = "Internal server error while retrieving test records" });
+            }
+        }
+
+        /// <summary>
+        /// Get a specific test record by ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TestDto>> GetTestById(long id)
+        {
+            try
+            {
+                _logger.LogInformation("Getting test record with ID: {Id}", id);
+                
+                var result = await _supabase
+                    .From<Test>()
+                    .Where(x => x.Id == id)
+                    .Get();
+                
+                var test = result.Models?.FirstOrDefault();
+                
+                if (test == null)
+                {
+                    _logger.LogWarning("Test record with ID {Id} not found", id);
+                    return NotFound(new { message = $"Test record with ID {id} not found" });
+                }
+
+                var testDto = new TestDto
+                {
+                    Id = test.Id,
+                    CreatedAt = test.CreatedAt
+                };
+
+                _logger.LogInformation("Retrieved test record with ID: {Id}", id);
+                return Ok(testDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving test record with ID: {Id}", id);
+                return StatusCode(500, new { message = "Internal server error while retrieving test record" });
+            }
+        }
+
+        /// <summary>
+        /// Create a new test record
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<TestDto>> CreateTest([FromBody] CreateTestDto createTestDto)
+        {
+            try
+            {
+                _logger.LogInformation("Creating new test record");
+                
+                var newTest = new Test
+                {
+                    CreatedAt = DateTime.UtcNow
+                };
+                
+                var result = await _supabase
+                    .From<Test>()
+                    .Insert(newTest);
+                
+                var createdTest = result.Models?.FirstOrDefault();
+                
+                if (createdTest == null)
+                {
+                    _logger.LogError("Failed to create test record - service returned null");
+                    return StatusCode(500, new { message = "Failed to create test record - service returned null" });
+                }
+
+                var testDto = new TestDto
+                {
+                    Id = createdTest.Id,
+                    CreatedAt = createdTest.CreatedAt
+                };
+
+                _logger.LogInformation("Created test record with ID: {Id}", createdTest.Id);
+                return CreatedAtAction(nameof(GetTestById), new { id = createdTest.Id }, testDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating test record: {Message}", ex.Message);
+                return StatusCode(500, new { message = "Internal server error while creating test record", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Create a simple test record (without database)
+        /// </summary>
+        [HttpPost("simple")]
+        public ActionResult<TestDto> CreateSimpleTest()
+        {
+            try
+            {
+                _logger.LogInformation("Creating simple test record");
+                
+                var testDto = new TestDto
+                {
+                    Id = Random.Shared.NextInt64(1, 1000),
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _logger.LogInformation("Created simple test record with ID: {Id}", testDto.Id);
+                return Ok(testDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating simple test record: {Message}", ex.Message);
+                return StatusCode(500, new { message = "Internal server error while creating simple test record", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Test Supabase connection directly
+        /// </summary>
+        [HttpGet("connection")]
+        public async Task<ActionResult<object>> TestConnection()
+        {
+            try
+            {
+                _logger.LogInformation("Testing Supabase connection");
+                
+                if (_supabase == null)
+                {
+                    return StatusCode(500, new { message = "Supabase client is null" });
+                }
+
+                return Ok(new 
+                { 
+                    status = "connected", 
+                    timestamp = DateTime.UtcNow,
+                    message = "Supabase client is available"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing Supabase connection: {Message}", ex.Message);
+                return StatusCode(500, new { 
+                    message = "Error testing Supabase connection", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Health check endpoint for testing API connectivity
+        /// </summary>
+        [HttpGet("health")]
+        public ActionResult<object> HealthCheck()
+        {
+            return Ok(new 
+            { 
+                status = "healthy", 
+                timestamp = DateTime.UtcNow,
+                message = "Test API is running successfully"
+            });
+        }
+    }
+}

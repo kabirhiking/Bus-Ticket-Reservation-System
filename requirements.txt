@@ -1,0 +1,166 @@
+Internship Batch 3 - Full-stack(.NET) Developer Assignment
+
+🚌 Bus Ticket Reservation System
+🕐 Deadline: 28th October 11:59pm
+
+🎯 Objective
+Design and develop a Bus Ticket Reservation System using .NET Core (C#) and Angular, following Clean Architecture and Domain-Driven Design (DDD) principles.
+
+This assignment evaluates your ability to design scalable architecture, implement clean business logic, build usable APIs, integrate with Angular UI, and ensure reliability through testing.
+
+⚙️ Technology & Architecture Requirements
+
+Backend:
+• .NET 9 (C#)
+• Entity Framework Core (PostgreSQL)
+• Clean Architecture + Domain Driven Design (DDD)
+• Unit Testing (xUnit or NUnit)
+
+Frontend:
+• Angular (latest stable version)
+• TypeScript
+• Bootstrap / TailwindCSS (optional)
+
+Example Architecture Layers:
+/src
+  /Domain
+  /Application
+  /Application.Contracts
+  /Infrastructure (EF Core)
+  /WebApi (Presentation)
+  /ClientApp (Angular)
+
+Each layer must follow DDD principles and Clean Architecture separation:
+
+Layer                   | Responsibility
+------------------------|---------------------------
+Domain                  | Entities, Value Objects, Domain Services
+Application             | Business logic, use cases, Application Services
+Application.Contracts   | DTOs, Interfaces
+Infrastructure          | EF Core DbContext, Repository Implementations
+WebApi                  | REST API controllers and endpoints
+ClientApp               | Angular front-end application
+
+🛠️ System Description
+A simple Bus Ticket Reservation System where users can:
+• Search for available buses between two cities on a specific date.
+• View seat layout for a selected bus.
+• Book seats by entering passenger details and confirm booking.
+
+🧩 Functional Requirements
+
+1️⃣ Search Available Buses
+Users should be able to search for buses by:
+• Going From
+• Going To
+• Journey Date
+
+The result should display a list of available buses with:
+• Company Name
+• Bus Name
+• Start Time
+• Arrival Time
+• Seats Left (TotalSeats - BookedSeats)
+• Price
+
+🛠️ Backend
+• Implement an Application Service named SearchService.
+• Define a method:
+  Task<List<AvailableBusDto>> SearchAvailableBusesAsync(string from, string to, DateTime journeyDate);
+
+• Join Bus, Route, BusSchedule, and Seat/Ticket entities.
+• Calculate Seats Left automatically.
+• Use Repository pattern (no direct DbContext access).
+• Return clean DTOs to API.
+
+🛠️ Frontend
+• Create a simple Angular form with inputs for From, To, and Journey Date.
+• Display search results in a table or card layout.
+• Each result should have a "View Seats" button.
+
+2️⃣ View Bus Seat Plan & Book Seats
+
+When the user selects a bus:
+• Display the seat layout showing seat status:
+  ○ 🟢 Available
+  ○ 🟠 Booked
+  ○ 🔴 Sold
+
+• Allow the user to:
+  ○ Select Boarding Point and Dropping Point
+  ○ Enter Name and Mobile Number
+  ○ Confirm booking
+
+🛠️ Backend
+Implement BookingService with two key methods:
+
+Task<SeatPlanDto> GetSeatPlanAsync(Guid busScheduleId);
+Task<BookSeatResultDto> BookSeatAsync(BookSeatInputDto input);
+
+• GetSeatPlanAsync:
+  ○ Retrieve seats for the given BusSchedule.
+  ○ Return each seat's number, row, and status.
+
+• BookSeatAsync:
+  ○ Validate that the seat is available.
+  ○ Create a Ticket entity linked to Passenger.
+  ○ Update the seat's status to Booked (or Sold if confirmed).
+  ○ Execute within a transaction.
+
+• Implement Domain Service for seat state transitions.
+• Write Unit Tests for:
+  ○ Booking an available seat
+  ○ Attempting to book an already booked seat
+  ○ Correct seat status update after booking/cancellation
+
+🛠️ Frontend
+• Show seat layout using a grid or simple box UI.
+• Color seats by status (Available, Booked, Sold).
+• Let users select seats and input passenger info.
+• Confirm booking via API call and show confirmation message.
+
+✅ Testing Requirements
+• Write Unit Tests for:
+  ○ Search functionality
+  ○ Booking logic
+  ○ Seat availability validation
+
+• Use xUnit or NUnit.
+• Mock repositories or use EF Core InMemoryDatabase.
+• Ensure meaningful test names and proper Arrange-Act-Assert structure.
+
+📦 Deliverables
+• Source code (Backend + Frontend)
+• Database migration scripts or EF Core migrations
+• Unit tests included in the solution
+• A short video (3–5 minutes) demonstrating:
+  ○ Architecture overview (Clean Architecture layers)
+  ○ System workflow (Search → View Seats → Booking)
+  ○ Unit test execution
+
+📊 Evaluation Criteria
+
+Category                    | Evaluation Focus
+---------------------------|------------------------------------------
+Architecture Design        | DDD + Clean Architecture adherence
+Code Quality              | Readable, modular, maintainable code
+Repository & Services     | Correct use of abstractions and interfaces
+Async/Transactions        | Proper async/await and atomic operations
+Validation & Error Handling| Clean handling of invalid inputs and booking conflicts
+Testing                   | Unit test coverage, structure, and meaningful scenarios
+UI Implementation         | Usability, correctness, and responsiveness
+Video Demo                | Clarity and explanation of system and design
+
+📝 Submission Instructions
+1. Package your complete project (backend + frontend) as a GitHub repository.
+2. Include a README.md with setup and run instructions
+3. Include a 3–5 minute video walkthrough (screen recording).
+
+🖥️ UI Reference:
+Please follow the attached UI screenshots as a visual guideline for layout, flow, and component behavior. The design does not need to be pixel-perfect but should closely reflect the provided structure and user experience.
+
+[UI Screenshots show:
+- Search form with From/To cities and date picker
+- Bus search results with company names, times, seats available, prices
+- Seat selection layout with color-coded seat status
+- Booking form with boarding/dropping points and passenger details]

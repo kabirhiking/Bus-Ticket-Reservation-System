@@ -1,0 +1,105 @@
+### Bus Ticket Reservation API Tests
+### Base URL: https://localhost:7001
+
+### 1. Search Available Buses
+POST https://localhost:7001/api/busreservation/search
+Content-Type: application/json
+
+{
+  "fromCity": "New York",
+  "toCity": "Boston",
+  "journeyDate": "2025-10-25",
+  "passengerCount": 2
+}
+
+###
+
+### 2. Search with validation errors (past date)
+POST https://localhost:7001/api/busreservation/search
+Content-Type: application/json
+
+{
+  "fromCity": "New York",
+  "toCity": "Boston",
+  "journeyDate": "2025-10-20",
+  "passengerCount": 2
+}
+
+###
+
+### 3. Search with validation errors (same cities)
+POST https://localhost:7001/api/busreservation/search
+Content-Type: application/json
+
+{
+  "fromCity": "New York",
+  "toCity": "New York",
+  "journeyDate": "2025-10-25",
+  "passengerCount": 2
+}
+
+###
+
+### 4. Get Seat Availability (Replace with actual schedule ID from search result)
+GET https://localhost:7001/api/busreservation/schedule/3fa85f64-5717-4562-b3fc-2c963f66afa6/seats
+
+###
+
+### 5. Book Tickets (Replace with actual schedule ID)
+POST https://localhost:7001/api/busreservation/book
+Content-Type: application/json
+
+{
+  "scheduleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "seatNumbers": ["A1", "A2"],
+  "passengerInfo": {
+    "name": "John Doe",
+    "mobileNumber": "1234567890",
+    "email": "john.doe@example.com"
+  }
+}
+
+###
+
+### 6. Book with validation errors (invalid mobile)
+POST https://localhost:7001/api/busreservation/book
+Content-Type: application/json
+
+{
+  "scheduleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "seatNumbers": ["A1"],
+  "passengerInfo": {
+    "name": "John Doe",
+    "mobileNumber": "123",
+    "email": "invalid-email"
+  }
+}
+
+###
+
+### 7. Get Ticket Details (Replace with actual ticket ID from booking result)
+GET https://localhost:7001/api/busreservation/ticket/3fa85f64-5717-4562-b3fc-2c963f66afa6
+
+###
+
+### 8. Cancel Ticket (Replace with actual ticket ID)
+POST https://localhost:7001/api/busreservation/cancel
+Content-Type: application/json
+
+{
+  "ticketId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "reason": "Change of travel plans"
+}
+
+###
+
+### 9. Cancel with validation error (short reason)
+POST https://localhost:7001/api/busreservation/cancel
+Content-Type: application/json
+
+{
+  "ticketId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "reason": "No"
+}
+
+###
