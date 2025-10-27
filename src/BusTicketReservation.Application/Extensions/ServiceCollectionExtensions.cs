@@ -13,6 +13,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IBookingService, BookingService>();
         
+        // Add authentication services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IOtpService, OtpService>();
+        
+        // Add Supabase service
+        services.AddScoped<ISupabaseService, SupabaseService>();
+        
         // Add domain services
         services.AddScoped<SeatBookingDomainService>();
         
