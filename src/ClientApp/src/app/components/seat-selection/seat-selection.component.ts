@@ -1,15 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BusReservationService, BusSchedule, SeatAvailability } from '../../services/bus-reservation.service';
+import { BusReservationService, BusSchedule, SeatAvailability, BoardingPoint, DroppingPoint } from '../../services/bus-reservation.service';
 
 interface Seat {
   number: string;
   status: 'available' | 'booked' | 'sold' | 'selected' | 'empty';
-}
-
-interface BoardingPoint {
-  time: string;
-  name: string;
 }
 
 @Component({
@@ -26,18 +21,8 @@ export class SeatSelectionComponent implements OnInit {
 
   seatLayout: Seat[][] = [];
   
-  boardingPoints: BoardingPoint[] = [
-    { time: '08:00 AM', name: 'Kallyanpur counter' },
-    { time: '10:30 AM', name: 'Baneshwore Counter' },
-    { time: '12:30 PM', name: 'Rajshahi Counter' },
-    { time: '01:00 PM', name: 'Rajshahi Counter' }
-  ];
-
-  droppingPoints: BoardingPoint[] = [
-    { time: '10:30 AM', name: 'Baneshwore Counter' },
-    { time: '12:30 PM', name: 'Rajshahi Counter' },
-    { time: '01:00 PM', name: 'Rajshahi Counter' }
-  ];
+  boardingPoints: BoardingPoint[] = [];
+  droppingPoints: DroppingPoint[] = [];
 
   bookingForm = {
     boardingPoint: '',
@@ -64,6 +49,45 @@ export class SeatSelectionComponent implements OnInit {
       }
       
       this.initializeSeatLayout();
+      this.loadBoardingAndDroppingPoints();
+    });
+  }
+
+  loadBoardingAndDroppingPoints(): void {
+    if (!this.selectedSchedule) return;
+
+    this.isLoading = true;
+
+    // Load boarding points for departure city
+    this.busService.getBoardingPoints(this.selectedSchedule.routeFrom).subscribe({
+      next: (points) => {
+        this.boardingPoints = points;
+        console.log('Loaded boarding points for', this.selectedSchedule?.routeFrom, ':', points);
+      },
+      error: (error) => {
+        console.error('Error loading boarding points:', error);
+        // Fallback to default boarding points
+        this.boardingPoints = [
+          { id: 1, name: 'Main Terminal', address: 'Central Bus Terminal', landmarks: 'Near Main Station' }
+        ];
+      }
+    });
+
+    // Load dropping points for destination city
+    this.busService.getDroppingPoints(this.selectedSchedule.routeTo).subscribe({
+      next: (points) => {
+        this.droppingPoints = points;
+        console.log('Loaded dropping points for', this.selectedSchedule?.routeTo, ':', points);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading dropping points:', error);
+        // Fallback to default dropping points
+        this.droppingPoints = [
+          { id: 1, name: 'Main Terminal', address: 'Central Bus Terminal', landmarks: 'Near Main Station' }
+        ];
+        this.isLoading = false;
+      }
     });
   }
 

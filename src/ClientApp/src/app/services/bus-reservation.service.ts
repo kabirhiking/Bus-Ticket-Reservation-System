@@ -107,6 +107,20 @@ export interface SeatAvailability {
   bookedSeats: number[];
 }
 
+export interface BoardingPoint {
+  id: number;
+  name: string;
+  address: string;
+  landmarks: string;
+}
+
+export interface DroppingPoint {
+  id: number;
+  name: string;
+  address: string;
+  landmarks: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -191,6 +205,16 @@ export class BusReservationService {
   // Get seat availability
   getSeatAvailability(scheduleId: number): Observable<SeatAvailability> {
     return this.http.get<SeatAvailability>(`${this.apiUrl}/BusReservation/schedule/${scheduleId}/seats`);
+  }
+
+  // Get boarding points for a city
+  getBoardingPoints(city: string): Observable<BoardingPoint[]> {
+    return this.http.get<BoardingPoint[]>(`${this.apiUrl}/BusReservation/boarding-points/${city}`);
+  }
+
+  // Get dropping points for a city
+  getDroppingPoints(city: string): Observable<DroppingPoint[]> {
+    return this.http.get<DroppingPoint[]>(`${this.apiUrl}/BusReservation/dropping-points/${city}`);
   }
 
   // State management methods

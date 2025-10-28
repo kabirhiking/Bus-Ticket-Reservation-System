@@ -46,13 +46,31 @@
                 <!-- From Location -->
                 <div class="search-field search-field-left">
                   <label class="field-label">GOING FROM</label>
-                  <input
-                    type="text"
-                    class="form-control field-input"
-                    formControlName="from"
-                    placeholder="Please select"
-                    [class.is-invalid]="searchForm.get('from')?.invalid && searchForm.get('from')?.touched"
-                  />
+                  <div class="autocomplete-wrapper">
+                    <input
+                      type="text"
+                      class="form-control field-input"
+                      formControlName="from"
+                      placeholder="Please select"
+                      (focus)="onFromFocus()"
+                      (blur)="showFromDropdown = false"
+                      [class.is-invalid]="searchForm.get('from')?.invalid && searchForm.get('from')?.touched"
+                      autocomplete="off"
+                    />
+                    <div class="autocomplete-dropdown" *ngIf="showFromDropdown && filteredFromCities.length > 0">
+                      <div class="dropdown-header">
+                        <i class="fas fa-search"></i>
+                        <span class="dropdown-search-text">{{ searchForm.get('from')?.value || 'Search by city' }}</span>
+                      </div>
+                      <div class="dropdown-list">
+                        <div class="dropdown-item"
+                             *ngFor="let city of filteredFromCities"
+                             (mousedown)="selectFromCity(city)">
+                          {{ city }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="invalid-feedback" *ngIf="searchForm.get('from')?.invalid && searchForm.get('from')?.touched">
                     From location is required
                   </div>
@@ -68,13 +86,31 @@
                 <!-- To Location -->
                 <div class="search-field search-field-right">
                   <label class="field-label">GOING TO</label>
-                  <input
-                    type="text"
-                    class="form-control field-input"
-                    formControlName="to"
-                    placeholder="Please select"
-                    [class.is-invalid]="searchForm.get('to')?.invalid && searchForm.get('to')?.touched"
-                  />
+                  <div class="autocomplete-wrapper">
+                    <input
+                      type="text"
+                      class="form-control field-input"
+                      formControlName="to"
+                      placeholder="Please select"
+                      (focus)="onToFocus()"
+                      (blur)="showToDropdown = false"
+                      [class.is-invalid]="searchForm.get('to')?.invalid && searchForm.get('to')?.touched"
+                      autocomplete="off"
+                    />
+                    <div class="autocomplete-dropdown" *ngIf="showToDropdown && filteredToCities.length > 0">
+                      <div class="dropdown-header">
+                        <i class="fas fa-search"></i>
+                        <span class="dropdown-search-text">{{ searchForm.get('to')?.value || 'Search by city' }}</span>
+                      </div>
+                      <div class="dropdown-list">
+                        <div class="dropdown-item"
+                             *ngFor="let city of filteredToCities"
+                             (mousedown)="selectToCity(city)">
+                          {{ city }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="invalid-feedback" *ngIf="searchForm.get('to')?.invalid && searchForm.get('to')?.touched">
                     To location is required
                   </div>

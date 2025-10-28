@@ -8,13 +8,86 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Supabase;
+using Microsoft.EntityFrameworkCore;
+using BusTicketReservation.Infrastructure.Data;
+using BusTicketReservation.Application.Interfaces;
 
-var builder = WebApplication.CreateBuilder(args);
+try
+{
+    Console.WriteLine("Starting application...");
+    var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
+    // Add services to the container
+    builder.Services.AddControllers();
 
-// Add Supabase Client
+// Add Application layer services
+builder.Services.AddApplication();
+
+// Add Supabase-based repositories for authentication BEFORE Infrastructure
+// This prevents Infrastructure from registering its own User/Otp repositories
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+
+if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
+{
+    builder.Services.AddScoped<Supabase.Client>(provider =>
+    {
+        var options = new SupabaseOptions { AutoConnectRealtime = false };
+        return new Supabase.Client(supabaseUrl, supabaseKey, options);
+    });
+    
+    builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IUserRepository>(provider => 
+    {
+        var supabase = provider.GetRequiredService<Supabase.Client>();
+        var logger = provider.GetRequiredService<ILogger<SupabaseUserRepository>>();
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        return new SupabaseUserRepository(supabase, logger, configuration);
+    });
+
+    builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IOtpRepository>(provider => 
+    {
+        var supabase = provider.GetRequiredService<Supabase.Client>();
+        var logger = provider.GetRequiredService<ILogger<SupabaseOtpRepository>>();
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        return new SupabaseOtpRepository(logger, supabase, configuration);
+    });
+}
+
+// Database configuration - check if InMemory is enabled
+var useInMemory = builder.Configuration.GetConnectionString("UseInMemory") == "true";
+
+if (useInMemory)
+{
+    Console.WriteLine("⚠️  WARNING: Using InMemory database (IPv6 connectivity issue with Supabase)");
+    Console.WriteLine("📊 InMemory database will work for testing without external database");
+    
+    // Add InMemory database
+    builder.Services.AddDbContext<BusTicketDbContext>(options =>
+        options.UseInMemoryDatabase("BusTicketReservationDb")
+               .EnableSensitiveDataLogging()
+               .EnableDetailedErrors());
+    
+    // Add repositories manually for InMemory
+    builder.Services.AddScoped<IBusRepository, BusTicketReservation.Infrastructure.Repositories.BusRepository>();
+    builder.Services.AddScoped<IRouteRepository, BusTicketReservation.Infrastructure.Repositories.RouteRepository>();
+    builder.Services.AddScoped<IBusScheduleRepository, BusTicketReservation.Infrastructure.Repositories.BusScheduleRepository>();
+    builder.Services.AddScoped<ISeatRepository, BusTicketReservation.Infrastructure.Repositories.SeatRepository>();
+    builder.Services.AddScoped<IPassengerRepository, BusTicketReservation.Infrastructure.Repositories.PassengerRepository>();
+    builder.Services.AddScoped<ITicketRepository, BusTicketReservation.Infrastructure.Repositories.TicketRepository>();
+    builder.Services.AddScoped<IUnitOfWork, BusTicketReservation.Infrastructure.UnitOfWork.UnitOfWork>();
+    
+    // Skip auth repositories for InMemory - will be handled by existing Supabase ones
+}
+else
+{
+    // Add Infrastructure layer services (Entity Framework + PostgreSQL)
+    // Skip User/Otp repository registration since we use Supabase for auth
+    builder.Services.AddInfrastructure(builder.Configuration);
+}
+
+// TEMPORARILY DISABLED: Supabase Client for Authentication  
+// TODO: Re-enable after testing PostgreSQL integration
+/*
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 
@@ -24,25 +97,14 @@ if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
     {
         var options = new SupabaseOptions
         {
-            AutoConnectRealtime = true
+            AutoConnectRealtime = false
         };
         
         var client = new Supabase.Client(supabaseUrl, supabaseKey, options);
-        client.InitializeAsync().Wait(); // Note: In production, consider async initialization
         return client;
     });
 }
 
-// Add Application layer services
-builder.Services.AddApplication();
-
-// Add basic services for testing - TEMPORARILY DISABLED
-// builder.Services.AddScoped<BusTicketReservation.WebApi.Services.SupabaseService>();
-
-// Add Infrastructure layer services - TEMPORARILY DISABLED due to EF version conflicts
-// builder.Services.AddInfrastructure(builder.Configuration);
-
-// Add Supabase-based repositories for authentication
 builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IUserRepository>(provider => 
 {
     var supabase = provider.GetRequiredService<Supabase.Client>();
@@ -58,9 +120,44 @@ builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IOtpRepos
     var configuration = provider.GetRequiredService<IConfiguration>();
     return new SupabaseOtpRepository(logger, supabase, configuration);
 });
+*/
 
-// Add placeholder for IUnitOfWork (not used in Supabase implementation)
-builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IUnitOfWork, NoOpUnitOfWork>();
+// TEMPORARILY DISABLED: Supabase Client for Authentication
+// TODO: Re-enable after testing PostgreSQL integration
+/*
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+
+if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
+{
+    builder.Services.AddScoped<Supabase.Client>(provider =>
+    {
+        var options = new SupabaseOptions
+        {
+            AutoConnectRealtime = false
+        };
+        
+        var client = new Supabase.Client(supabaseUrl, supabaseKey, options);
+        return client;
+    });
+}
+
+builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IUserRepository>(provider => 
+{
+    var supabase = provider.GetRequiredService<Supabase.Client>();
+    var logger = provider.GetRequiredService<ILogger<SupabaseUserRepository>>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    return new SupabaseUserRepository(supabase, logger, configuration);
+});
+
+builder.Services.AddScoped<BusTicketReservation.Application.Interfaces.IOtpRepository>(provider => 
+{
+    var supabase = provider.GetRequiredService<Supabase.Client>();
+    var logger = provider.GetRequiredService<ILogger<SupabaseOtpRepository>>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    return new SupabaseOtpRepository(logger, supabase, configuration);
+});
+*/
 
 // Add API-specific services
 builder.Services.AddScoped<IMappingService, MappingService>();
@@ -175,6 +272,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Seed data for InMemory database
+if (useInMemory)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<BusTicketDbContext>();
+        BusTicketReservation.Infrastructure.Data.SeedData.InitializeAsync(context).GetAwaiter().GetResult();
+    }
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -196,4 +303,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+Console.WriteLine("Application configured successfully. Starting server...");
 app.Run();
+Console.WriteLine("Application stopped.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"FATAL ERROR: {ex.GetType().Name}");
+    Console.WriteLine($"Message: {ex.Message}");
+    Console.WriteLine($"StackTrace: {ex.StackTrace}");
+    if (ex.InnerException != null)
+    {
+        Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+    }
+    Console.WriteLine("Press any key to exit...");
+    Console.ReadKey();
+    Environment.Exit(1);
+}

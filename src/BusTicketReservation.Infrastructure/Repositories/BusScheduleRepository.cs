@@ -6,7 +6,7 @@ using BusTicketReservation.Infrastructure.Data;
 
 namespace BusTicketReservation.Infrastructure.Repositories;
 
-public class BusScheduleRepository : EntityRepository<BusSchedule>, IBusScheduleRepository
+public class BusScheduleRepository : Repository<BusSchedule>, IBusScheduleRepository
 {
     public BusScheduleRepository(BusTicketDbContext context) : base(context)
     {
@@ -32,20 +32,20 @@ public class BusScheduleRepository : EntityRepository<BusSchedule>, IBusSchedule
         {
             ScheduleId = s.Id,
             BusId = s.BusId,
-            BusName = s.Bus.Name,
-            CompanyName = s.Bus.CompanyName,
-            BusType = s.Bus.BusType,
+            BusName = s.Bus?.Name ?? "Unknown",
+            CompanyName = s.Bus?.CompanyName ?? "Unknown",
+            BusType = s.Bus?.BusType ?? "Unknown",
             RouteId = s.RouteId,
-            FromCity = s.Route.FromCity,
-            ToCity = s.Route.ToCity,
+            FromCity = s.Route?.FromCity ?? "Unknown",
+            ToCity = s.Route?.ToCity ?? "Unknown",
             DepartureTime = s.DepartureTime,
             ArrivalTime = s.ArrivalTime,
             JourneyDate = journeyDate,
             Price = s.Price.Amount,
             Currency = s.Price.Currency,
-            TotalSeats = s.Bus.TotalSeats,
-            AvailableSeats = s.Bus.Seats.Count(seat => seat.Status == SeatStatus.Available),
-            Distance = s.Route.Distance
+            TotalSeats = s.Bus?.TotalSeats ?? 0,
+            AvailableSeats = s.Bus?.Seats?.Count(seat => seat.Status == SeatStatus.Available) ?? 0,
+            Distance = s.Route?.Distance ?? 0
         });
     }
 

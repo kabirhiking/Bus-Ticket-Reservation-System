@@ -85,7 +85,7 @@ export class SearchResultsComponent implements OnInit {
   baseFare = 700;
   
   // Toggle between mock data and real API
-  useMockData = true; // Set to false when API is ready
+  useMockData = false; // Set to false when API is ready
 
   constructor(
     private route: ActivatedRoute,
@@ -296,9 +296,103 @@ export class SearchResultsComponent implements OnInit {
       console.log('🟢 Expanding seat selection');
       this.selectedBusForSeats = schedule;
       console.log('🟢 selectedBusForSeats set to:', this.selectedBusForSeats);
+      
+      //Load real seat data from API
+      this.loadSeatLayout(schedule);
+    }
+  }
+
+  loadSeatLayout(schedule: BusSchedule): void {
+    this.isLoading = true;
+    
+    if (this.useMockData) {
+      // Use mock data
       this.initializeSeatLayout();
       this.resetBookingForm();
+      this.isLoading = false;
+    } else {
+      // Load real seat data from API
+      this.busService.getSeatAvailability(schedule.id).subscribe({
+        next: (seatData: any) => {
+          console.log('Seat availability data:', seatData);
+          
+          if (seatData.success && seatData.data) {
+            // Map real seat data
+            this.initializeSeatLayoutFromAPI(seatData.data.seats);
+          } else {
+            // Fallback to mock data if API fails
+            this.initializeSeatLayout();
+          }
+          
+          this.resetBookingForm();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading seat data:', error);
+          // Fallback to mock data
+          this.initializeSeatLayout();
+          this.resetBookingForm();
+          this.isLoading = false;
+        }
+      });
     }
+  }
+
+  initializeSeatLayoutFromAPI(seats: any[]): void {
+    this.seatLayout = [];
+    
+    // Group seats by row
+    const seatsByRow: { [key: string]: any[] } = {};
+    
+    seats.forEach(seat => {
+      const row = seat.row || 'Row1';
+      if (!seatsByRow[row]) {
+        seatsByRow[row] = [];
+      }
+      seatsByRow[row].push(seat);
+    });
+    
+    // Create seat layout with 4 columns (2 left + aisle + 2 right)
+    Object.keys(seatsByRow).sort().forEach(rowKey => {
+      const rowSeats = seatsByRow[rowKey].sort((a, b) => a.seatNumber.localeCompare(b.seatNumber));
+      const seatRow: Seat[] = [];
+      
+      // Add first 2 seats
+      for (let i = 0; i < 2 && i < rowSeats.length; i++) {
+        const apiSeat = rowSeats[i];
+        let status: Seat['status'] = 'available';
+        
+        if (!apiSeat.isAvailable) {
+          status = apiSeat.isBooked ? 'booked' : (apiSeat.isSold ? 'sold' : 'booked');
+        }
+        
+        seatRow.push({
+          number: apiSeat.seatNumber,
+          status: status
+        });
+      }
+      
+      // Add aisle (empty spaces)
+      seatRow.push({ number: '', status: 'empty' });
+      seatRow.push({ number: '', status: 'empty' });
+      
+      // Add remaining 2 seats
+      for (let i = 2; i < 4 && i < rowSeats.length; i++) {
+        const apiSeat = rowSeats[i];
+        let status: Seat['status'] = 'available';
+        
+        if (!apiSeat.isAvailable) {
+          status = apiSeat.isBooked ? 'booked' : (apiSeat.isSold ? 'sold' : 'booked');
+        }
+        
+        seatRow.push({
+          number: apiSeat.seatNumber,
+          status: status
+        });
+      }
+      
+      this.seatLayout.push(seatRow);
+    });
   }
 
   initializeSeatLayout(): void {

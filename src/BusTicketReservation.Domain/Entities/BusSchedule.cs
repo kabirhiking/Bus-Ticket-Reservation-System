@@ -3,7 +3,7 @@ using BusTicketReservation.Domain.ValueObjects;
 
 namespace BusTicketReservation.Domain.Entities;
 
-public class BusSchedule : BaseEntity
+public class BusSchedule : BaseEntity, IAggregateRoot
 {
     public Guid BusId { get; private set; }
     public Guid RouteId { get; private set; }

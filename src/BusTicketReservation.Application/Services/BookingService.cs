@@ -12,15 +12,18 @@ public class BookingService : IBookingService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly SeatBookingDomainService _seatBookingDomainService;
+    private readonly IBoardingPointService _boardingPointService;
     private readonly ILogger<BookingService> _logger;
 
     public BookingService(
         IUnitOfWork unitOfWork, 
         SeatBookingDomainService seatBookingDomainService,
+        IBoardingPointService boardingPointService,
         ILogger<BookingService> logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _seatBookingDomainService = seatBookingDomainService ?? throw new ArgumentNullException(nameof(seatBookingDomainService));
+        _boardingPointService = boardingPointService ?? throw new ArgumentNullException(nameof(boardingPointService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -51,6 +54,8 @@ public class BookingService : IBookingService
             ArrivalTime = schedule.ArrivalTime,
             FromCity = schedule.Route?.FromCity ?? string.Empty,
             ToCity = schedule.Route?.ToCity ?? string.Empty,
+            BoardingPoints = _boardingPointService.GetBoardingPoints(schedule.Route?.FromCity ?? string.Empty),
+            DroppingPoints = _boardingPointService.GetDroppingPoints(schedule.Route?.ToCity ?? string.Empty),
             Seats = seats.Select(MapToSeatDto).ToList()
         };
 

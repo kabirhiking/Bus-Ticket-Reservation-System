@@ -14,11 +14,22 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services, 
         IConfiguration configuration)
     {
-        // Add DbContext
+        // Add DbContext with IPv4-only configuration
         services.AddDbContext<BusTicketDbContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(BusTicketDbContext).Assembly.FullName)));
+        {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            
+            // Configure Npgsql to prefer IPv4 and disable pooling for better error visibility
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+            {
+                npgsqlOptions.MigrationsAssembly(typeof(BusTicketDbContext).Assembly.FullName);
+                npgsqlOptions.CommandTimeout(30); // 30 seconds timeout
+            });
+            
+            // Enable detailed error logging
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors();
+        });
 
         // Add repositories
         services.AddScoped<IBusRepository, BusRepository>();
@@ -28,9 +39,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IPassengerRepository, PassengerRepository>();
         
-        // Add authentication repositories
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IOtpRepository, OtpRepository>();
+        // NOTE: IUserRepository and IOtpRepository are registered in Program.cs
+        // using Supabase-based implementations for authentication
 
         // Add Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();

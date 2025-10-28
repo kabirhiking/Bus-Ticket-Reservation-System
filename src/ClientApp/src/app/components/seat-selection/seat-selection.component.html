@@ -48,24 +48,36 @@
       <div class="booking-form-section">
         <h2 class="form-title">BOARDING/DROPPING:</h2>
         
-        <div class="form-group">
-          <label>BOARDING POINT*</label>
-          <select [(ngModel)]="bookingForm.boardingPoint" class="form-control">
-            <option value="">Select boarding point</option>
-            <option *ngFor="let point of boardingPoints" [value]="point.name">
-              [{{point.time}}] {{point.name}}
-            </option>
-          </select>
+        <div *ngIf="isLoading" class="loading-points">
+          <i class="fas fa-spinner fa-spin"></i> Loading boarding points...
         </div>
 
-        <div class="form-group">
-          <label>DROPPING POINT*</label>
-          <select [(ngModel)]="bookingForm.droppingPoint" class="form-control">
-            <option value="">Select dropping point</option>
-            <option *ngFor="let point of droppingPoints" [value]="point.name">
-              [{{point.time}}] {{point.name}}
-            </option>
-          </select>
+        <div *ngIf="!isLoading">
+          <div class="form-group">
+            <label>BOARDING POINT*</label>
+            <select [(ngModel)]="bookingForm.boardingPoint" class="form-control">
+              <option value="">Select boarding point</option>
+              <option *ngFor="let point of boardingPoints" [value]="point.name">
+                {{point.name}} - {{point.address}}
+              </option>
+            </select>
+            <small *ngIf="selectedSchedule" class="text-muted">
+              From: {{selectedSchedule.routeFrom}}
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>DROPPING POINT*</label>
+            <select [(ngModel)]="bookingForm.droppingPoint" class="form-control">
+              <option value="">Select dropping point</option>
+              <option *ngFor="let point of droppingPoints" [value]="point.name">
+                {{point.name}} - {{point.address}}
+              </option>
+            </select>
+            <small *ngIf="selectedSchedule" class="text-muted">
+              To: {{selectedSchedule.routeTo}}
+            </small>
+          </div>
         </div>
 
         <div class="fare-details">

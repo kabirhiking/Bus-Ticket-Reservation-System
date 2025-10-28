@@ -1,5 +1,21 @@
 namespace BusTicketReservation.Application.DTOs;
 
+public class BoardingPointDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Time { get; set; } = string.Empty;
+}
+
+public class DroppingPointDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Time { get; set; } = string.Empty;
+}
+
 public class BookSeatInputDto
 {
     public Guid BusScheduleId { get; set; }

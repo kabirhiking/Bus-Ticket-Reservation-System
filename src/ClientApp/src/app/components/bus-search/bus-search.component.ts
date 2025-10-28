@@ -18,6 +18,28 @@ export class BusSearchComponent implements OnInit {
   isLoading = false;
   minDate: string;
   
+  // City autocomplete
+  allCities: string[] = [
+    'Abdullahpur', 'Adabor', 'Aditimari', 'Agartala', 'Agrabad', 'Akhaura',
+    'Bandarban', 'Barisal', 'Barguna', 'Bhairab', 'Bhola', 'Bogra', 'Brahmanbaria',
+    'Chapainawabganj', 'Chittagong', 'Chuadanga', 'Comilla', 'Coxs-Bazar',
+    'Dhaka', 'Dinajpur', 'Faridpur', 'Feni',
+    'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj',
+    'Jamalpur', 'Jessore', 'Jhenaidah', 'Joypurhat',
+    'Khagrachhari', 'Khulna', 'Kishoreganj', 'Kurigram', 'Kushtia',
+    'Lakshmipur', 'Lalmonirhat', 'Madaripur', 'Magura', 'Manikganj', 'Maulvibazar', 'Meherpur', 'Munshiganj', 'Mymensingh',
+    'Naogaon', 'Narail', 'Narayanganj', 'Narsingdi', 'Natore', 'Netrokona', 'Nilphamari', 'Noakhali',
+    'Pabna', 'Panchagarh', 'Patuakhali', 'Pirojpur',
+    'Rajbari', 'Rajshahi', 'Rangamati', 'Rangpur',
+    'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj', 'Sunamganj', 'Sylhet',
+    'Tangail', 'Thakurgaon'
+  ];
+  
+  filteredFromCities: string[] = [];
+  filteredToCities: string[] = [];
+  showFromDropdown = false;
+  showToDropdown = false;
+  
   trendingRoutes: TrendingRoute[] = [
     { from: 'Dhaka', to: 'Rajshahi' },
     { from: 'Dhaka', to: 'Barisal' },
@@ -46,6 +68,75 @@ export class BusSearchComponent implements OnInit {
 
   ngOnInit(): void {
     this.setDefaultValues();
+    
+    // Subscribe to form control changes for autocomplete
+    this.searchForm.get('from')?.valueChanges.subscribe(value => {
+      this.filterFromCities(value);
+    });
+    
+    this.searchForm.get('to')?.valueChanges.subscribe(value => {
+      this.filterToCities(value);
+    });
+  }
+
+  filterFromCities(searchTerm: string): void {
+    if (!searchTerm || searchTerm.length < 1) {
+      this.filteredFromCities = this.allCities.slice(0, 20); // Show first 20 cities when empty
+      this.showFromDropdown = true;
+      return;
+    }
+    
+    const search = searchTerm.toLowerCase();
+    this.filteredFromCities = this.allCities.filter(city =>
+      city.toLowerCase().includes(search)
+    );
+    this.showFromDropdown = this.filteredFromCities.length > 0;
+  }
+
+  filterToCities(searchTerm: string): void {
+    if (!searchTerm || searchTerm.length < 1) {
+      this.filteredToCities = this.allCities.slice(0, 20); // Show first 20 cities when empty
+      this.showToDropdown = true;
+      return;
+    }
+    
+    const search = searchTerm.toLowerCase();
+    this.filteredToCities = this.allCities.filter(city =>
+      city.toLowerCase().includes(search)
+    );
+    this.showToDropdown = this.filteredToCities.length > 0;
+  }
+
+  selectFromCity(city: string): void {
+    this.searchForm.patchValue({ from: city });
+    this.showFromDropdown = false;
+  }
+
+  selectToCity(city: string): void {
+    this.searchForm.patchValue({ to: city });
+    this.showToDropdown = false;
+  }
+
+  onFromFocus(): void {
+    const currentValue = this.searchForm.get('from')?.value;
+    if (currentValue) {
+      this.filterFromCities(currentValue);
+    } else {
+      // Show all cities when field is empty
+      this.filteredFromCities = this.allCities.slice(0, 20);
+      this.showFromDropdown = true;
+    }
+  }
+
+  onToFocus(): void {
+    const currentValue = this.searchForm.get('to')?.value;
+    if (currentValue) {
+      this.filterToCities(currentValue);
+    } else {
+      // Show all cities when field is empty
+      this.filteredToCities = this.allCities.slice(0, 20);
+      this.showToDropdown = true;
+    }
   }
 
   setDefaultValues(): void {

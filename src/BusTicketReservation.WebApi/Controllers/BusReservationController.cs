@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using BusTicketReservation.Application.Interfaces;
 using BusTicketReservation.Application.DTOs;
+using BusTicketReservation.Application.Services;
 using BusTicketReservation.WebApi.DTOs.Requests;
 using BusTicketReservation.WebApi.DTOs.Responses;
 using BusTicketReservation.WebApi.Services;
+using Npgsql;
+using PostgreSqlException = Npgsql.PostgresException;
 
 namespace BusTicketReservation.WebApi.Controllers;
 
@@ -15,6 +18,7 @@ public class BusReservationController : ControllerBase
 {
     private readonly ISearchService _searchService;
     private readonly IBookingService _bookingService;
+    private readonly IBoardingPointService _boardingPointService;
     private readonly IMappingService _mappingService;
     private readonly IValidator<SearchBusesRequest> _searchValidator;
     private readonly IValidator<BookTicketRequest> _bookValidator;
@@ -24,6 +28,7 @@ public class BusReservationController : ControllerBase
     public BusReservationController(
         ISearchService searchService,
         IBookingService bookingService,
+        IBoardingPointService boardingPointService,
         IMappingService mappingService,
         IValidator<SearchBusesRequest> searchValidator,
         IValidator<BookTicketRequest> bookValidator,
@@ -32,6 +37,7 @@ public class BusReservationController : ControllerBase
     {
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         _bookingService = bookingService ?? throw new ArgumentNullException(nameof(bookingService));
+        _boardingPointService = boardingPointService ?? throw new ArgumentNullException(nameof(boardingPointService));
         _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
         _searchValidator = searchValidator ?? throw new ArgumentNullException(nameof(searchValidator));
         _bookValidator = bookValidator ?? throw new ArgumentNullException(nameof(bookValidator));
@@ -76,11 +82,29 @@ public class BusReservationController : ControllerBase
             return Ok(ApiResponse<SearchBusesResponse>.SuccessResult(response, 
                 $"Found {response.SearchResultCount} available buses"));
         }
+        catch (PostgreSqlException pgEx)
+        {
+            _logger.LogError(pgEx, "PostgreSQL database error while searching buses: {ErrorCode} - {Message}", pgEx.SqlState, pgEx.MessageText);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, 
+                ApiResponse<SearchBusesResponse>.ErrorResult($"Database connection error: {pgEx.MessageText}"));
+        }
+        catch (NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Npgsql connection error while searching buses: {Message}", npgEx.Message);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, 
+                ApiResponse<SearchBusesResponse>.ErrorResult($"Database connection failed: {npgEx.Message}"));
+        }
+        catch (TimeoutException timeEx)
+        {
+            _logger.LogError(timeEx, "Database timeout while searching buses");
+            return StatusCode(StatusCodes.Status408RequestTimeout, 
+                ApiResponse<SearchBusesResponse>.ErrorResult("Database operation timed out. Please try again."));
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while searching buses");
+            _logger.LogError(ex, "Unexpected error occurred while searching buses");
             return StatusCode(StatusCodes.Status500InternalServerError, 
-                ApiResponse<SearchBusesResponse>.ErrorResult("An error occurred while searching buses"));
+                ApiResponse<SearchBusesResponse>.ErrorResult($"An unexpected error occurred: {ex.Message}"));
         }
     }
 
@@ -280,6 +304,68 @@ public class BusReservationController : ControllerBase
             _logger.LogError(ex, "Error occurred while cancelling ticket");
             return StatusCode(StatusCodes.Status500InternalServerError,
                 ApiResponse<BookSeatResultDto>.ErrorResult("An error occurred while cancelling the ticket"));
+        }
+    }
+
+    /// <summary>
+    /// Get boarding points for a specific city
+    /// </summary>
+    /// <param name="city">The city name to get boarding points for</param>
+    /// <returns>List of boarding points</returns>
+    [HttpGet("boarding-points/{city}")]
+    [ProducesResponseType(typeof(ApiResponse<List<BoardingPointDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public ActionResult<ApiResponse<List<BoardingPointDto>>> GetBoardingPoints(string city)
+    {
+        try
+        {
+            _logger.LogInformation("Getting boarding points for city: {City}", city);
+            
+            var boardingPoints = _boardingPointService.GetBoardingPoints(city);
+            
+            if (!boardingPoints.Any())
+            {
+                return NotFound(ApiResponse<List<BoardingPointDto>>.ErrorResult($"No boarding points found for city: {city}"));
+            }
+            
+            return Ok(ApiResponse<List<BoardingPointDto>>.SuccessResult(boardingPoints, $"Found {boardingPoints.Count} boarding points for {city}"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while getting boarding points for city: {City}", city);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                ApiResponse<List<BoardingPointDto>>.ErrorResult("An error occurred while getting boarding points"));
+        }
+    }
+
+    /// <summary>
+    /// Get dropping points for a specific city
+    /// </summary>
+    /// <param name="city">The city name to get dropping points for</param>
+    /// <returns>List of dropping points</returns>
+    [HttpGet("dropping-points/{city}")]
+    [ProducesResponseType(typeof(ApiResponse<List<DroppingPointDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public ActionResult<ApiResponse<List<DroppingPointDto>>> GetDroppingPoints(string city)
+    {
+        try
+        {
+            _logger.LogInformation("Getting dropping points for city: {City}", city);
+            
+            var droppingPoints = _boardingPointService.GetDroppingPoints(city);
+            
+            if (!droppingPoints.Any())
+            {
+                return NotFound(ApiResponse<List<DroppingPointDto>>.ErrorResult($"No dropping points found for city: {city}"));
+            }
+            
+            return Ok(ApiResponse<List<DroppingPointDto>>.SuccessResult(droppingPoints, $"Found {droppingPoints.Count} dropping points for {city}"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while getting dropping points for city: {City}", city);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                ApiResponse<List<DroppingPointDto>>.ErrorResult("An error occurred while getting dropping points"));
         }
     }
 }

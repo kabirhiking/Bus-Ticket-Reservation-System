@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusTicketReservation.Infrastructure.Repositories
 {
-    public class OtpRepository : EntityRepository<OtpCode>, IOtpRepository
+    public class OtpRepository : Repository<OtpCode>, IOtpRepository
     {
         public OtpRepository(BusTicketDbContext context) : base(context)
         {

@@ -25,4 +25,6 @@ public class SeatPlanDto
     public DateTime ArrivalTime { get; set; }
     public string FromCity { get; set; } = string.Empty;
     public string ToCity { get; set; } = string.Empty;
+    public List<BoardingPointDto> BoardingPoints { get; set; } = new();
+    public List<DroppingPointDto> DroppingPoints { get; set; } = new();
 }
